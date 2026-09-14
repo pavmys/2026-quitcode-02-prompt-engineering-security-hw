@@ -19,6 +19,9 @@ export interface QuoteInput {
 /** Ціна проєкту в центах з урахуванням знижки. */
 export function estimateTotalCents(input: QuoteInput): number {
   const { hours, rateCents, discountPercent = 0 } = input;
+  if (discountPercent < 0 || discountPercent > 100) {
+    throw new Error(`discountPercent має бути в межах 0..100, отримано: ${discountPercent}`);
+  }
   const gross = hours * rateCents;
   const discount = (gross * discountPercent) / 100;
   return Math.round(gross - discount);
@@ -29,8 +32,12 @@ export function estimateTotalCents(input: QuoteInput): number {
  * Повертає масив довжиною `parts`.
  */
 export function splitInstallments(totalCents: number, parts: number): number[] {
-  const each = Math.round(totalCents / parts);
-  return new Array(parts).fill(each);
+  if (!Number.isInteger(parts) || parts < 1) {
+    throw new Error(`parts має бути цілим числом >= 1, отримано: ${parts}`);
+  }
+  const each = Math.floor(totalCents / parts);
+  const remainder = totalCents - each * parts;
+  return Array.from({ length: parts }, (_, i) => each + (i < remainder ? 1 : 0));
 }
 
 /** Форматування центів у рядок на кшталт "$1,234.50". */
